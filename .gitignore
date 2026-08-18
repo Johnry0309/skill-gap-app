@@ -1,0 +1,44 @@
+# Environment & Secret Keys (CRITICAL: Do not commit API keys!)
+.env
+.env.local
+.env.*.local
+
+# Dependency directories
+node_modules/
+jspm_packages/
+web_modules/
+
+# Production and Build outputs
+dist/
+dist-ssr/
+build/
+*.chunk.js
+
+# Logs and Debug files
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Editor & OS system files
+.DS_Store
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.vscode/*
+!.vscode/extensions.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/settings.json
+
+# Local history / Temporary files
+.next/
+.nuxt/
+.vuepress/dist
+.cache/
