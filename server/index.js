@@ -88,7 +88,7 @@ app.get('/api/research', async (req, res) => {
 
     console.log(`🔍 Fetching live web search results for "${normalizedCity}"...`);
 
-    const jobResults = await searchWeb(`top hiring tech job openings and required skills in ${normalizedCity}`);
+    const jobResults = await searchWeb(`top hiring job openings and required skills in ${normalizedCity}`);
     const eduResults = await searchWeb(`universities colleges graduate programs and skill output in ${normalizedCity}`);
 
     const contextText = JSON.stringify({
@@ -106,7 +106,7 @@ Synthesize this data into a structured skill discrepancy report for ${normalized
 Strictly return a valid JSON object matching this exact structure:
 
 {
-  "summary": "Executive summary (2-3 sentences) describing the labor market skill discrepancy in ${normalizedCity}.",
+  "summary": "Executive summary (4-5 sentences) describing the labor market skill discrepancy in ${normalizedCity}.",
   "comparisonData": [
     { "skill": "Skill Name", "demand": 85, "supply": 40 }
   ],
@@ -127,6 +127,7 @@ Strictly return a valid JSON object matching this exact structure:
   "interpretation": "Detailed strategic policy recommendations for municipal leaders and academic institutions."
 }
 
+Note: Provide exactly up to 10 distinct job openings inside the "jobListings" array.
 Do not include markdown code block backticks (\`\`\`json) in your response, return raw JSON string only.
 `;
 
@@ -145,6 +146,12 @@ Do not include markdown code block backticks (\`\`\`json) in your response, retu
 
     const parsedData = JSON.parse(rawText);
 
+    // Limit array count to exactly 5
+    const MAX_JOBS = 10;
+    const limitedJobListings = Array.isArray(parsedData.jobListings)
+      ? parsedData.jobListings.slice(0, MAX_JOBS)
+      : [];
+
     // Save/Update in MongoDB Atlas
     const updatedRecord = await Research.findOneAndUpdate(
       { city: normalizedCity },
@@ -155,7 +162,7 @@ Do not include markdown code block backticks (\`\`\`json) in your response, retu
         comparisonData: parsedData.comparisonData,
         institutions: parsedData.institutions,
         courseDetails: parsedData.courseDetails,
-        jobListings: parsedData.jobListings,
+        jobListings: limitedJobListings,
         interpretation: parsedData.interpretation,
       },
       { upsert: true, new: true, runValidators: true }

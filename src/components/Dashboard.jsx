@@ -49,7 +49,7 @@ export default function Dashboard({ researchData, onTakeQuiz }) {
           <span style={styles.badge(source)}>
             {source === 'cache' ? `📦 Cached (${lastCheckedDate})` : '⚡ Live Analysis'}
           </span>
-          <h2 style={styles.title}>Labor Market Overview: {data.city?.toUpperCase()}</h2>
+          <h2 style={styles.title}>Labor Market Overview: <span style={{ color: '#99ff46de' }}>{data.city?.toUpperCase()}</span></h2>
         </div>
         <div style={styles.statsRow}>
           <div style={styles.statBox}>
@@ -309,13 +309,14 @@ const styles = {
     alignItems: 'center',
     flexWrap: 'wrap',
     gap: '16px',
-    boxShadow: '0 10px 15px -3px rgba(15, 23, 42, 0.15)'
+    boxShadow: '0 10px 15px -3px rgba(20, 42, 15, 0.15)'
   },
   title: {
     margin: '8px 0 0 0',
     fontSize: '22px',
     fontWeight: '700',
-    letterSpacing: '-0.5px'
+    letterSpacing: '-0.5px',
+    color: '#ffffff'
   },
   badge: (source) => ({
     fontSize: '12px',

@@ -25,7 +25,7 @@ export default function CitySelector({ selectedCity, onSelectCity, onSearch, loa
         border: '1px solid #e2e8f0',
         borderRadius: '12px',
         padding: '20px 24px',
-        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
+        boxShadow: '0 4px 6px -1px rgba(139, 116, 116, 0.05)',
         marginBottom: '24px',
         width: '100%'
       }}
