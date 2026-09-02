@@ -50,15 +50,22 @@ export default function App() {
   };
 
   return (
-    <div style={{ maxWidth: '900px', margin: '0 auto', padding: '20px' }}>
-      <header style={{ borderBottom: '1px solid #e2e8f0', paddingBottom: '15px' }}>
-        <h1 style={{ color: '#1e293b', margin: 0 }}>SkillGap Analytics Portal</h1>
-        <p style={{ color: '#64748b', margin: '4px 0 0 0' }}>
-          Bridging municipal higher-education outputs with real-time labor market demands
-        </p>
+    <div className="app-viewport">
+      {/* Top Brand Header */}
+      <header className="app-header">
+        <div className="app-header-content">
+          <div className="app-pill-badge">
+            <span>⚡ AI-Powered Workforce Intelligence</span>
+          </div>
+          <h1 className="app-title">SkillGap Analytics Portal</h1>
+          <p className="app-subtitle">
+            Bridging municipal higher-education outputs with real-time labor market demands
+          </p>
+        </div>
       </header>
 
-      <main>
+      {/* Main Content Body */}
+      <main className="app-main-container">
         <CitySelector
           selectedCity={selectedCity}
           onSelectCity={setSelectedCity}
@@ -67,12 +74,17 @@ export default function App() {
         />
 
         {error && (
-          <div style={{ color: '#dc2626', backgroundColor: '#fef2f2', padding: '12px', borderRadius: '6px', margin: '15px 0' }}>
-            {error}
+          <div className="app-error-banner">
+            🚨 {error}
           </div>
         )}
 
-        {loading && <p style={{ color: '#64748b', marginTop: '20px' }}>Analyzing live data & cache records...</p>}
+        {loading && (
+          <div className="app-loading-state">
+            <div className="app-spinner"></div>
+            <p>Analyzing live market telemetry & retrieving cached records...</p>
+          </div>
+        )}
 
         {!loading && researchData && (
           <Dashboard

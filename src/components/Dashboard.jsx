@@ -42,152 +42,138 @@ export default function Dashboard({ researchData, onTakeQuiz }) {
   };
 
   return (
-    <div style={{ textAlign: 'left', marginTop: '20px' }}>
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h2>Labor Market Report: {data.city.toUpperCase()}</h2>
-        <span
-          style={{
-            fontSize: '13px',
-            backgroundColor: source === 'cache' ? '#e2e8f0' : '#dcfce7',
-            color: source === 'cache' ? '#475569' : '#166534',
-            padding: '4px 10px',
-            borderRadius: '12px',
-            fontWeight: '600'
-          }}
-        >
-          {source === 'cache' ? `📦 Cached (Last checked: ${lastCheckedDate})` : '⚡ Live Fresh Analysis'}
-        </span>
+    <div style={styles.container}>
+      {/* Header Banner */}
+      <div style={styles.headerCard}>
+        <div>
+          <span style={styles.badge(source)}>
+            {source === 'cache' ? `📦 Cached (${lastCheckedDate})` : '⚡ Live Analysis'}
+          </span>
+          <h2 style={styles.title}>Labor Market Overview: {data.city?.toUpperCase()}</h2>
+        </div>
+        <div style={styles.statsRow}>
+          <div style={styles.statBox}>
+            <span style={styles.statValue}>{data.jobListings?.length || 0}</span>
+            <span style={styles.statLabel}>Active Roles</span>
+          </div>
+          <div style={styles.statBox}>
+            <span style={styles.statValue}>{data.comparisonData?.length || 0}</span>
+            <span style={styles.statLabel}>Tracked Skills</span>
+          </div>
+        </div>
       </div>
 
-      {/* Summary Box */}
-      <div style={{ backgroundColor: '#f8fafc', padding: '16px', borderRadius: '8px', borderLeft: '4px solid #2563eb', margin: '15px 0' }}>
-        <h4>Executive Summary</h4>
-        <p>{data.summary}</p>
+      {/* Executive Summary */}
+      <div style={styles.summaryCard}>
+        <div style={styles.cardHeader}>
+          <span style={styles.icon}>💡</span>
+          <h3 style={styles.sectionTitle}>Executive Summary</h3>
+        </div>
+        <p style={styles.summaryText}>{data.summary}</p>
       </div>
 
-      {/* Skill Discrepancy Bar Graph */}
+      {/* Analytics Chart */}
       {data.comparisonData && data.comparisonData.length > 0 && (
-        <div style={{ margin: '30px 0', backgroundColor: '#ffffff', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-          <h4>Skill Discrepancy Graph (Demand vs. Supply)</h4>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={data.comparisonData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="skill" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Bar dataKey="demand" name="Employer Demand (%)" fill="#2563eb" />
-              <Bar dataKey="supply" name="Graduate Supply (%)" fill="#10b981" />
-            </BarChart>
-          </ResponsiveContainer>
+        <div style={styles.card}>
+          <div style={styles.cardHeader}>
+            <span style={styles.icon}>📊</span>
+            <h3 style={styles.sectionTitle}>Skill Discrepancy Breakdown</h3>
+          </div>
+          <p style={styles.subText}>Employer demand vs. local graduate supply ratio across key domains.</p>
+          <div style={{ width: '100%', height: 320, marginTop: '15px' }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={data.comparisonData} margin={{ top: 20, right: 20, left: -10, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                <XAxis dataKey="skill" tick={{ fill: '#64748b', fontSize: 12 }} />
+                <YAxis tick={{ fill: '#64748b', fontSize: 12 }} />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: '#0f172a',
+                    borderRadius: '8px',
+                    color: '#fff',
+                    border: 'none',
+                    boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)'
+                  }}
+                  itemStyle={{ color: '#38bdf8' }}
+                />
+                <Legend wrapperStyle={{ paddingTop: '10px' }} />
+                <Bar dataKey="demand" name="Employer Demand (%)" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="supply" name="Graduate Supply (%)" fill="#10b981" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       )}
 
-      {/* Strategic Interpretation */}
+      {/* Strategic Policy Interpretation */}
       {data.interpretation && (
-        <div style={{ margin: '20px 0' }}>
-          <h4>Policy & Curriculum Analysis</h4>
-          <p style={{ color: '#334155', lineHeight: '1.6' }}>{data.interpretation}</p>
+        <div style={styles.card}>
+          <div style={styles.cardHeader}>
+            <span style={styles.icon}>🏛️</span>
+            <h3 style={styles.sectionTitle}>Policy & Curriculum Recommendations</h3>
+          </div>
+          <p style={styles.bodyText}>{data.interpretation}</p>
         </div>
       )}
 
-      {/* Job Listings Section */}
-      <div style={{ marginTop: '30px' }}>
-        <h3>In-Demand Openings & Skill Verification</h3>
-        <div style={{ display: 'grid', gap: '15px', marginTop: '10px' }}>
+      {/* Job Openings Grid */}
+      <div style={{ marginTop: '35px' }}>
+        <div style={styles.cardHeader}>
+          <span style={styles.icon}>🎯</span>
+          <h3 style={styles.sectionTitle}>High-Demand Openings & Verification</h3>
+        </div>
+        
+        <div style={styles.jobGrid}>
           {data.jobListings && data.jobListings.length > 0 ? (
             data.jobListings.map((job, index) => (
-              <div
-                key={index}
-                style={{
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '8px',
-                  padding: '16px',
-                  display: 'flex',
-                  justify: 'space-between',
-                  alignItems: 'center',
-                  backgroundColor: '#ffffff'
-                }}
-              >
+              <div key={index} style={styles.jobCard}>
                 <div>
-                  <h4 style={{ margin: '0 0 6px 0' }}>{job.title}</h4>
-                  <p style={{ margin: '0 0 8px 0', color: '#64748b' }}>{job.company}</p>
-                  <div>
+                  <h4 style={styles.jobTitle}>{job.title}</h4>
+                  <p style={styles.companyName}>{job.company}</p>
+                  <div style={styles.skillTagContainer}>
                     {job.requiredSkills?.map((skill, sIdx) => (
-                      <span
-                        key={sIdx}
-                        style={{
-                          fontSize: '12px',
-                          backgroundColor: '#f1f5f9',
-                          color: '#0f172a',
-                          padding: '3px 8px',
-                          borderRadius: '4px',
-                          marginRight: '6px'
-                        }}
-                      >
+                      <span key={sIdx} style={styles.skillTag}>
                         {skill}
                       </span>
                     ))}
                   </div>
                 </div>
-
                 <button
                   onClick={() => handleStartQuiz(job)}
-                  style={{
-                    backgroundColor: '#059669',
-                    color: '#ffffff',
-                    border: 'none',
-                    padding: '8px 14px',
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    fontWeight: '600'
-                  }}
+                  style={styles.verifyBtn}
                 >
-                  Verify Skill & Apply
+                  Verify Skill & Apply →
                 </button>
               </div>
             ))
           ) : (
-            <p>No job listings recorded for this location yet.</p>
+            <p style={styles.emptyText}>No job listings recorded for this location yet.</p>
           )}
         </div>
       </div>
 
       {/* Quiz Modal Container */}
       {selectedJob && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0,0,0,0.5)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 100
-          }}
-        >
-          <div
-            style={{
-              backgroundColor: '#fff',
-              padding: '24px',
-              borderRadius: '8px',
-              maxWidth: '550px',
-              width: '90%',
-              maxHeight: '80vh',
-              overflowY: 'auto'
-            }}
-          >
-            <h3>Skill Assessment: {selectedJob.title}</h3>
+        <div style={styles.modalOverlay}>
+          <div style={styles.modalContent}>
+            <div style={styles.modalHeader}>
+              <h3 style={{ margin: 0, fontSize: '18px', color: '#0f172a' }}>
+                Skill Assessment: {selectedJob.title}
+              </h3>
+              <button onClick={() => setSelectedJob(null)} style={styles.closeIconBtn}>✕</button>
+            </div>
+
             {quizLoading ? (
-              <p>Generating personalized skill assessment via AI...</p>
+              <div style={styles.loadingContainer}>
+                <div style={styles.spinner}></div>
+                <p style={{ color: '#64748b', marginTop: '12px', fontSize: '14px' }}>
+                  Generating tailored technical assessment via AI...
+                </p>
+              </div>
             ) : activeQuiz ? (
               <QuizViewer quizData={activeQuiz} job={selectedJob} onClose={() => setSelectedJob(null)} />
             ) : (
-              <button onClick={() => setSelectedJob(null)}>Close</button>
+              <button onClick={() => setSelectedJob(null)} style={styles.secondaryBtn}>Close</button>
             )}
           </div>
         </div>
@@ -196,7 +182,7 @@ export default function Dashboard({ researchData, onTakeQuiz }) {
   );
 }
 
-// Inner Component to render Quiz Interactive State
+// Interactive Quiz Component
 function QuizViewer({ quizData, job, onClose }) {
   const [answers, setAnswers] = useState({});
   const [submitted, setSubmitted] = useState(false);
@@ -218,76 +204,378 @@ function QuizViewer({ quizData, job, onClose }) {
   const passed = percentage >= 80;
 
   return (
-    <div style={{ textAlign: 'left' }}>
+    <div style={{ marginTop: '15px' }}>
       {!submitted ? (
         <>
           {questions.map((q, qIdx) => (
-            <div key={qIdx} style={{ marginBottom: '16px' }}>
-              <p style={{ fontWeight: '600', marginBottom: '6px' }}>
-                {qIdx + 1}. {q.question}
+            <div key={qIdx} style={styles.questionBlock}>
+              <p style={styles.questionText}>
+                <span style={styles.questionNumber}>{qIdx + 1}</span> {q.question}
               </p>
-              {q.options.map((opt, oIdx) => (
-                <label key={oIdx} style={{ display: 'block', margin: '4px 0', cursor: 'pointer' }}>
-                  <input
-                    type="radio"
-                    name={`q_${qIdx}`}
-                    checked={answers[qIdx] === oIdx}
-                    onChange={() => setAnswers({ ...answers, [qIdx]: oIdx })}
-                  />{' '}
-                  {opt}
-                </label>
-              ))}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {q.options.map((opt, oIdx) => (
+                  <label
+                    key={oIdx}
+                    style={{
+                      ...styles.optionLabel,
+                      border: answers[qIdx] === oIdx ? '2px solid #2563eb' : '1px solid #e2e8f0',
+                      backgroundColor: answers[qIdx] === oIdx ? '#eff6ff' : '#ffffff'
+                    }}
+                  >
+                    <input
+                      type="radio"
+                      name={`q_${qIdx}`}
+                      checked={answers[qIdx] === oIdx}
+                      onChange={() => setAnswers({ ...answers, [qIdx]: oIdx })}
+                      style={{ accentColor: '#2563eb' }}
+                    />
+                    <span style={{ fontSize: '14px', color: '#334155' }}>{opt}</span>
+                  </label>
+                ))}
+              </div>
             </div>
           ))}
-          <div style={{ display: 'flex', gap: '10px', marginTop: '16px' }}>
+
+          <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
             <button
               onClick={handleSubmit}
               disabled={Object.keys(answers).length < questions.length}
-              style={{ backgroundColor: '#2563eb', color: '#fff', padding: '8px 16px', border: 'none', borderRadius: '4px' }}
+              style={{
+                ...styles.primaryBtn,
+                opacity: Object.keys(answers).length < questions.length ? 0.5 : 1,
+                cursor: Object.keys(answers).length < questions.length ? 'not-allowed' : 'pointer'
+              }}
             >
-              Submit Test
+              Submit Assessment
             </button>
-            <button onClick={onClose} style={{ backgroundColor: '#cbd5e1', border: 'none', padding: '8px 16px', borderRadius: '4px' }}>
-              Cancel
-            </button>
+            <button onClick={onClose} style={styles.secondaryBtn}>Cancel</button>
           </div>
         </>
       ) : (
-        <div style={{ textAlign: 'center' }}>
-          <h4>Result: {score} / {questions.length} ({percentage.toFixed(0)}%)</h4>
+        <div style={{ textAlign: 'center', padding: '10px 0' }}>
+          <div style={styles.scoreCircle(passed)}>
+            <span style={{ fontSize: '28px', fontWeight: '800' }}>{percentage.toFixed(0)}%</span>
+            <span style={{ fontSize: '12px', opacity: 0.8 }}>{score} / {questions.length} Correct</span>
+          </div>
+
           {passed ? (
-            <div style={{ color: '#166534', backgroundColor: '#dcfce7', padding: '12px', borderRadius: '6px', margin: '12px 0' }}>
-              <p style={{ fontWeight: 'bold' }}>🎉 Assessment Passed!</p>
+            <div style={styles.passAlert}>
+              <h4 style={{ margin: '0 0 6px 0', color: '#14532d' }}>🎉 Verification Passed!</h4>
+              <p style={{ margin: 0, fontSize: '13px', color: '#166534' }}>
+                Your technical score meets the requirement for this role.
+              </p>
               {job.applyLink ? (
-                <a
-                  href={job.applyLink}
-                  target="_blank"
-                  rel="noreferrer"
-                  style={{
-                    display: 'inline-block',
-                    backgroundColor: '#166534',
-                    color: '#fff',
-                    padding: '8px 16px',
-                    borderRadius: '4px',
-                    textDecoration: 'none',
-                    marginTop: '8px'
-                  }}
-                >
-                  Proceed to Application
+                <a href={job.applyLink} target="_blank" rel="noreferrer" style={styles.applyBtn}>
+                  Complete Application Form →
                 </a>
               ) : (
-                <p style={{ fontSize: '12px' }}>Contact hiring organization directly.</p>
+                <p style={{ fontSize: '12px', color: '#15803d', marginTop: '8px' }}>
+                  Forwarding verified status to hiring manager...
+                </p>
               )}
             </div>
           ) : (
-            <div style={{ color: '#991b1b', backgroundColor: '#fee2e2', padding: '12px', borderRadius: '6px', margin: '12px 0' }}>
-              <p style={{ fontWeight: 'bold' }}>Score threshold not met (80% required)</p>
-              <p style={{ fontSize: '14px' }}>Review key core competencies before attempting again.</p>
+            <div style={styles.failAlert}>
+              <h4 style={{ margin: '0 0 6px 0', color: '#7f1d1d' }}>Threshold Not Met</h4>
+              <p style={{ margin: 0, fontSize: '13px', color: '#991b1b' }}>
+                You scored below 80%. Review the core competencies and re-verify when ready.
+              </p>
             </div>
           )}
-          <button onClick={onClose} style={{ marginTop: '10px', padding: '6px 12px' }}>Close</button>
+
+          <button onClick={onClose} style={{ ...styles.secondaryBtn, width: '100%', marginTop: '15px' }}>
+            Close Assessment
+          </button>
         </div>
       )}
     </div>
   );
 }
+
+// Inline Style Object
+const styles = {
+  container: {
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    marginTop: '24px',
+    textAlign: 'left'
+  },
+  headerCard: {
+    backgroundColor: '#0f172a',
+    color: '#ffffff',
+    padding: '24px',
+    borderRadius: '12px',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: '16px',
+    boxShadow: '0 10px 15px -3px rgba(15, 23, 42, 0.15)'
+  },
+  title: {
+    margin: '8px 0 0 0',
+    fontSize: '22px',
+    fontWeight: '700',
+    letterSpacing: '-0.5px'
+  },
+  badge: (source) => ({
+    fontSize: '12px',
+    fontWeight: '600',
+    padding: '4px 10px',
+    borderRadius: '20px',
+    backgroundColor: source === 'cache' ? '#334155' : '#065f46',
+    color: source === 'cache' ? '#94a3b8' : '#34d399'
+  }),
+  statsRow: {
+    display: 'flex',
+    gap: '20px'
+  },
+  statBox: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'flex-end'
+  },
+  statValue: {
+    fontSize: '24px',
+    fontWeight: '800',
+    color: '#38bdf8'
+  },
+  statLabel: {
+    fontSize: '11px',
+    color: '#94a3b8',
+    textTransform: 'uppercase',
+    letterSpacing: '0.5px'
+  },
+  summaryCard: {
+    backgroundColor: '#eff6ff',
+    borderLeft: '4px solid #2563eb',
+    borderRadius: '8px',
+    padding: '20px',
+    margin: '20px 0'
+  },
+  card: {
+    backgroundColor: '#ffffff',
+    border: '1px solid #e2e8f0',
+    borderRadius: '12px',
+    padding: '24px',
+    margin: '20px 0',
+    boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.05)'
+  },
+  cardHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    marginBottom: '6px'
+  },
+  icon: {
+    fontSize: '18px'
+  },
+  sectionTitle: {
+    margin: 0,
+    fontSize: '18px',
+    fontWeight: '700',
+    color: '#1e293b'
+  },
+  summaryText: {
+    margin: 0,
+    color: '#1e3a8a',
+    fontSize: '15px',
+    lineHeight: '1.6'
+  },
+  subText: {
+    margin: 0,
+    color: '#64748b',
+    fontSize: '13px'
+  },
+  bodyText: {
+    margin: 0,
+    color: '#334155',
+    fontSize: '15px',
+    lineHeight: '1.7'
+  },
+  jobGrid: {
+    display: 'grid',
+    gap: '16px',
+    marginTop: '15px'
+  },
+  jobCard: {
+    backgroundColor: '#ffffff',
+    border: '1px solid #e2e8f0',
+    borderRadius: '10px',
+    padding: '20px',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    transition: 'transform 0.2s, box-shadow 0.2s',
+    boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
+  },
+  jobTitle: {
+    margin: '0 0 4px 0',
+    fontSize: '16px',
+    fontWeight: '700',
+    color: '#0f172a'
+  },
+  companyName: {
+    margin: '0 0 12px 0',
+    fontSize: '13px',
+    color: '#64748b'
+  },
+  skillTagContainer: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '6px'
+  },
+  skillTag: {
+    fontSize: '12px',
+    backgroundColor: '#f1f5f9',
+    color: '#334155',
+    fontWeight: '500',
+    padding: '3px 9px',
+    borderRadius: '6px'
+  },
+  verifyBtn: {
+    backgroundColor: '#059669',
+    color: '#ffffff',
+    border: 'none',
+    padding: '10px 18px',
+    borderRadius: '8px',
+    cursor: 'pointer',
+    fontWeight: '600',
+    fontSize: '13px',
+    whiteSpace: 'nowrap'
+  },
+  emptyText: {
+    color: '#64748b',
+    fontStyle: 'italic'
+  },
+  modalOverlay: {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(15, 23, 42, 0.6)',
+    backdropFilter: 'blur(4px)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1000
+  },
+  modalContent: {
+    backgroundColor: '#ffffff',
+    padding: '28px',
+    borderRadius: '12px',
+    maxWidth: '560px',
+    width: '90%',
+    maxHeight: '85vh',
+    overflowY: 'auto',
+    boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)'
+  },
+  modalHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderBottom: '1px solid #f1f5f9',
+    paddingBottom: '14px'
+  },
+  closeIconBtn: {
+    background: 'none',
+    border: 'none',
+    fontSize: '16px',
+    color: '#94a3b8',
+    cursor: 'pointer'
+  },
+  questionBlock: {
+    marginBottom: '20px'
+  },
+  questionText: {
+    fontWeight: '600',
+    fontSize: '14px',
+    color: '#1e293b',
+    marginBottom: '10px',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px'
+  },
+  questionNumber: {
+    backgroundColor: '#e2e8f0',
+    color: '#334155',
+    fontSize: '12px',
+    borderRadius: '50%',
+    width: '22px',
+    height: '22px',
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0
+  },
+  optionLabel: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    padding: '10px 14px',
+    borderRadius: '8px',
+    cursor: 'pointer',
+    transition: 'all 0.15s ease'
+  },
+  primaryBtn: {
+    backgroundColor: '#2563eb',
+    color: '#ffffff',
+    padding: '10px 20px',
+    border: 'none',
+    borderRadius: '6px',
+    fontWeight: '600',
+    fontSize: '14px',
+    flex: 1
+  },
+  secondaryBtn: {
+    backgroundColor: '#f1f5f9',
+    color: '#475569',
+    border: '1px solid #cbd5e1',
+    padding: '10px 20px',
+    borderRadius: '6px',
+    fontWeight: '600',
+    fontSize: '14px',
+    cursor: 'pointer'
+  },
+  loadingContainer: {
+    textAlign: 'center',
+    padding: '40px 0'
+  },
+  scoreCircle: (passed) => ({
+    width: '110px',
+    height: '110px',
+    borderRadius: '50%',
+    backgroundColor: passed ? '#dcfce7' : '#fee2e2',
+    color: passed ? '#15803d' : '#b91c1c',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    margin: '0 auto 16px auto'
+  }),
+  passAlert: {
+    backgroundColor: '#f0fdf4',
+    border: '1px solid #bbf7d0',
+    padding: '16px',
+    borderRadius: '8px',
+    margin: '16px 0'
+  },
+  failAlert: {
+    backgroundColor: '#fef2f2',
+    border: '1px solid #fecaca',
+    padding: '16px',
+    borderRadius: '8px',
+    margin: '16px 0'
+  },
+  applyBtn: {
+    display: 'inline-block',
+    backgroundColor: '#166534',
+    color: '#ffffff',
+    padding: '10px 18px',
+    borderRadius: '6px',
+    textDecoration: 'none',
+    fontWeight: '600',
+    fontSize: '13px',
+    marginTop: '12px'
+  }
+};
