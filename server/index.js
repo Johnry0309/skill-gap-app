@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import axios from 'axios';
-import NodeCache from 'node-cache';
+import mongoose from 'mongoose';
 import { GoogleGenAI } from '@google/genai';
 
 dotenv.config();
@@ -11,11 +11,37 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Cache entries for 24 hours (86400 seconds)
-const cache = new NodeCache({ stdTTL: 86400 });
+const PORT = process.env.PORT || 5000;
+
+// 1. Connect to MongoDB Atlas
+mongoose.connect(process.env.MONGODB_URI)
+  .then(() => console.log('🍃 Connected to MongoDB Database'))
+  .catch((err) => console.error('MongoDB Connection Error:', err));
+
+// 2. Define Mongoose Schema & Model (Monthly Pseudo-Cache)
+const researchSchema = new mongoose.Schema({
+  city: { type: String, required: true, lowercase: true, trim: true, unique: true },
+  lastChecked: { type: Date, default: Date.now },
+  summary: String,
+  comparisonData: Array,
+  institutions: Array,
+  courseDetails: Array,
+  jobListings: [
+    {
+      title: String,
+      company: String,
+      applyLink: String,
+      requiredSkills: [String],
+    }
+  ],
+  interpretation: String,
+});
+
+const Research = mongoose.model('Research', researchSchema);
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
+// Helper: Tavily Web Search
 async function searchWeb(query) {
   try {
     const response = await axios.post('https://api.tavily.com/search', {
@@ -24,13 +50,14 @@ async function searchWeb(query) {
       search_depth: 'basic',
       max_results: 5,
     });
-    return response.data.results;
+    return response.data.results || [];
   } catch (error) {
     console.error('Tavily Search Error:', error.message);
     return [];
   }
 }
 
+// 3. Research Route with 30-Day Pseudo-Caching
 app.get('/api/research', async (req, res) => {
   const { city } = req.query;
 
@@ -38,47 +65,72 @@ app.get('/api/research', async (req, res) => {
     return res.status(400).json({ error: 'City query parameter is required' });
   }
 
-  const cacheKey = `research_${city.toLowerCase().trim()}`;
-  const cachedResult = cache.get(cacheKey);
-
-  if (cachedResult) {
-    console.log(`⚡ Serving cached data for ${city}`);
-    return res.json(cachedResult);
-  }
+  const normalizedCity = city.toLowerCase().trim();
 
   try {
-    console.log(`🤖 AI searching live data for ${city}...`);
+    // Check for cached record in MongoDB
+    const existingRecord = await Research.findOne({ city: normalizedCity });
 
-    const searchResults = await searchWeb(
-      `top universities colleges schools in demand jobs labor market gap course offerings graduates ${city}`
-    );
+    if (existingRecord) {
+      const thirtyDaysInMs = 30 * 24 * 60 * 60 * 1000;
+      const age = Date.now() - new Date(existingRecord.lastChecked).getTime();
+
+      if (age < thirtyDaysInMs) {
+        console.log(`⚡ Returning cached research data for "${normalizedCity}"`);
+        return res.json({
+          source: 'cache',
+          data: existingRecord,
+        });
+      } else {
+        console.log(`⏳ Cache expired for "${normalizedCity}". Refreshing market research...`);
+      }
+    }
+
+    console.log(`🔍 Fetching live web search results for "${normalizedCity}"...`);
+
+    const jobResults = await searchWeb(`top hiring tech job openings and required skills in ${normalizedCity}`);
+    const eduResults = await searchWeb(`universities colleges graduate programs and skill output in ${normalizedCity}`);
+
+    const contextText = JSON.stringify({
+      jobSearch: jobResults,
+      eduSearch: eduResults,
+    });
 
     const prompt = `
-    You are an expert labor analyst. Analyze these web search results for ${city}:
-    ${JSON.stringify(searchResults)}
+You are an economic intelligence & labor market analyst. Analyze the following web search data regarding current workforce demands, employer skill requirements, and graduate skill outputs in ${normalizedCity}.
 
-    Synthesize the information and respond strictly with a valid JSON object matching this schema:
+Search Data:
+${contextText}
+
+Synthesize this data into a structured skill discrepancy report for ${normalizedCity}.
+Strictly return a valid JSON object matching this exact structure:
+
+{
+  "summary": "Executive summary (2-3 sentences) describing the labor market skill discrepancy in ${normalizedCity}.",
+  "comparisonData": [
+    { "skill": "Skill Name", "demand": 85, "supply": 40 }
+  ],
+  "institutions": [
+    { "name": "Institution Name", "focus": "Primary program focus or university department specialization" }
+  ],
+  "courseDetails": [
+    { "title": "Program or Skill Area", "mismatchNote": "Note on curriculum alignment or gap with industry standards" }
+  ],
+  "jobListings": [
     {
-      "summary": "1-2 sentence overview of the skill discrepancy between top demanded jobs vs produced graduates in ${city}.",
-      "comparisonData": [
-        {"field": "Industry Name (e.g., IT & Tech)", "jobsNeeded": 400, "graduates": 150}
-      ],
-      "institutions": [
-        {
-          "name": "School or University Name",
-          "category": "Public / Private / Vocational",
-          "courses": ["Course 1", "Course 2"],
-          "graduates": 1200,
-          "strategicFocus": "Brief focus description"
-        }
-      ],
-      "courseDetails": [
-        {"field": "Degree/Course Name", "graduates": 150, "gradRate": "85%", "passingRate": "75% or N/A"}
-      ],
-      "interpretation": "Write a 1-2 paragraph detailed analysis interpreting the educational institution data, graduate output volume, skill alignment with local labor market demand, and strategic economic recommendations for local planners in ${city}."
+      "title": "Job Title",
+      "company": "Company Name",
+      "applyLink": "URL link from search result or empty string if unavailable",
+      "requiredSkills": ["Skill 1", "Skill 2"]
     }
-    List the educational institutions in order of prominence/importance in ${city}.
-    `;
+  ],
+  "interpretation": "Detailed strategic policy recommendations for municipal leaders and academic institutions."
+}
+
+Do not include markdown code block backticks (\`\`\`json) in your response, return raw JSON string only.
+`;
+
+    console.log(`🤖 Generating AI Skill Gap analysis via Gemini...`);
 
     const response = await ai.models.generateContent({
       model: 'gemini-3.6-flash',
@@ -88,24 +140,102 @@ app.get('/api/research', async (req, res) => {
       },
     });
 
-    const structuredData = JSON.parse(response.text);
-    cache.set(cacheKey, structuredData);
-    res.json(structuredData);
+    let rawText = response.text.trim();
+    rawText = rawText.replace(/^```json\s*/i, '').replace(/^```\s*/, '').replace(/\s*```$/, '');
 
-  } catch (err) {
-    console.error('Error conducting AI research:', err.message);
-    
-    if (err.message.includes('429') || err.message.includes('RESOURCE_EXHAUSTED')) {
-      return res.status(429).json({ 
-        error: 'API Rate limit exceeded. Please wait a minute before querying another municipality.' 
-      });
-    }
+    const parsedData = JSON.parse(rawText);
 
-    res.status(500).json({ error: 'Failed to process AI web research', details: err.message });
+    // Save/Update in MongoDB Atlas
+    const updatedRecord = await Research.findOneAndUpdate(
+      { city: normalizedCity },
+      {
+        city: normalizedCity,
+        lastChecked: new Date(),
+        summary: parsedData.summary,
+        comparisonData: parsedData.comparisonData,
+        institutions: parsedData.institutions,
+        courseDetails: parsedData.courseDetails,
+        jobListings: parsedData.jobListings,
+        interpretation: parsedData.interpretation,
+      },
+      { upsert: true, new: true, runValidators: true }
+    );
+
+    console.log(`✅ Research successfully generated and saved to database for "${normalizedCity}"`);
+
+    return res.json({
+      source: 'live',
+      data: updatedRecord,
+    });
+
+  } catch (error) {
+    console.error('Error during research query processing:', error);
+    return res.status(500).json({
+      error: 'An error occurred while generating labor market research.',
+      details: error.message,
+    });
   }
 });
 
-const PORT = process.env.PORT || 5000;
+// 4. Assessment / Quiz Generation Route
+app.post('/api/assessment', async (req, res) => {
+  const { jobTitle, requiredSkills } = req.body;
+
+  if (!jobTitle) {
+    return res.status(400).json({ error: 'Job title is required' });
+  }
+
+  try {
+    console.log(`📝 Generating Skill Verification Assessment for: ${jobTitle}...`);
+
+    const prompt = `
+You are a technical recruiter creating a skill assessment for candidate verification.
+Target Role: ${jobTitle}
+Key Skills to Evaluate: ${Array.isArray(requiredSkills) ? requiredSkills.join(', ') : 'General Role Knowledge'}
+
+Generate a 10-question multiple choice technical screening quiz.
+Strictly return a valid JSON object matching this exact structure:
+
+{
+  "role": "${jobTitle}",
+  "questions": [
+    {
+      "id": 1,
+      "question": "Clear technical question evaluating a core skill",
+      "options": ["Option A", "Option B", "Option C", "Option D"],
+      "correctAnswerIndex": 0
+    }
+  ]
+}
+
+Do not include markdown code block backticks (\`\`\`json) in your response, return raw JSON string only.
+`;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-3.6-flash',
+      contents: prompt,
+      config: {
+        responseMimeType: 'application/json',
+      },
+    });
+
+    let rawText = response.text.trim();
+    rawText = rawText.replace(/^```json\s*/i, '').replace(/^```\s*/, '').replace(/\s*```$/, '');
+
+    const quizData = JSON.parse(rawText);
+
+    return res.json(quizData);
+
+  } catch (error) {
+    console.error('Error generating assessment:', error);
+    return res.status(500).json({
+      error: 'Failed to generate skill assessment',
+      details: error.message,
+    });
+  }
+});
+
+// Start Express Server
 app.listen(PORT, () => {
-  console.log(`🚀 Backend server running on http://localhost:${PORT}`);
+  console.log(`🚀 SkillGap API server running on port ${PORT}`);
 });

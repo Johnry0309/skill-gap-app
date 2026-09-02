@@ -1,56 +1,86 @@
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import CitySelector from './components/CitySelector';
 import Dashboard from './components/Dashboard';
+import './App.css';
 
-const fetchCityResearch = async (city) => {
-  const response = await fetch(`http://localhost:5000/api/research?city=${encodeURIComponent(city)}`);
-  
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.error || 'Failed to fetch AI research for this city');
-  }
-
-  return response.json();
-};
+const API_BASE_URL = 'http://localhost:5000/api';
 
 export default function App() {
   const [selectedCity, setSelectedCity] = useState('');
+  const [researchData, setResearchData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const { data, isLoading, isError, error } = useQuery({
-    queryKey: ['research', selectedCity],
-    queryFn: () => fetchCityResearch(selectedCity),
-    enabled: !!selectedCity,
-    staleTime: 1000 * 60 * 60 * 24, // 24 hours
-    retry: 1,
-  });
+  const handleFetchResearch = async () => {
+    if (!selectedCity) return;
+
+    setLoading(true);
+    setError('');
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/research?city=${encodeURIComponent(selectedCity)}`);
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to fetch labor market research');
+      }
+
+      setResearchData(result);
+    } catch (err) {
+      setError(err.message);
+      setResearchData(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGenerateQuiz = async (jobTitle, requiredSkills) => {
+    const response = await fetch(`${API_BASE_URL}/assessment`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ jobTitle, requiredSkills })
+    });
+
+    const result = await response.json();
+    if (!response.ok) {
+      throw new Error(result.error || 'Failed to generate quiz');
+    }
+
+    return result;
+  };
 
   return (
-    <div style={{ maxWidth: '900px', margin: '0 auto', padding: '20px', fontFamily: 'sans-serif' }}>
-      <h1>Local Labor Market & Skill Discrepancy Platform</h1>
-      <p>Select a municipality in Rizal to view live labor demand vs. graduate output stats.</p>
+    <div style={{ maxWidth: '900px', margin: '0 auto', padding: '20px' }}>
+      <header style={{ borderBottom: '1px solid #e2e8f0', paddingBottom: '15px' }}>
+        <h1 style={{ color: '#1e293b', margin: 0 }}>SkillGap Analytics Portal</h1>
+        <p style={{ color: '#64748b', margin: '4px 0 0 0' }}>
+          Bridging municipal higher-education outputs with real-time labor market demands
+        </p>
+      </header>
 
-      <CitySelector onSelectCity={(city) => setSelectedCity(city)} disabled={isLoading} selectedCity={selectedCity} />
+      <main>
+        <CitySelector
+          selectedCity={selectedCity}
+          onSelectCity={setSelectedCity}
+          onSearch={handleFetchResearch}
+          loading={loading}
+        />
 
-      {!selectedCity && (
-        <div style={{ padding: '30px', textAlign: 'center', color: '#718096', border: '2px dashed #e2e8f0', borderRadius: '8px', marginTop: '20px' }}>
-          Please select a municipality above to generate live labor market insights.
-        </div>
-      )}
+        {error && (
+          <div style={{ color: '#dc2626', backgroundColor: '#fef2f2', padding: '12px', borderRadius: '6px', margin: '15px 0' }}>
+            {error}
+          </div>
+        )}
 
-      {isLoading && (
-        <div style={{ padding: '20px', textAlign: 'center', color: '#4a5568' }}>
-          🤖 AI is analyzing live web data for <strong>{selectedCity}</strong>...
-        </div>
-      )}
+        {loading && <p style={{ color: '#64748b', marginTop: '20px' }}>Analyzing live data & cache records...</p>}
 
-      {isError && (
-        <div style={{ padding: '16px', color: '#c53030', background: '#fff5f5', borderRadius: '8px', marginTop: '16px' }}>
-          {error?.message || 'Could not retrieve data.'}
-        </div>
-      )}
-
-      {!isLoading && data && <Dashboard data={data} />}
+        {!loading && researchData && (
+          <Dashboard
+            researchData={researchData}
+            onTakeQuiz={handleGenerateQuiz}
+          />
+        )}
+      </main>
     </div>
   );
 }
