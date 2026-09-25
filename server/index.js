@@ -146,7 +146,7 @@ Do not include markdown code block backticks (\`\`\`json) in your response, retu
 
     const parsedData = JSON.parse(rawText);
 
-    // Limit array count to exactly 5
+    // Limit array count to maximum 10
     const MAX_JOBS = 10;
     const limitedJobListings = Array.isArray(parsedData.jobListings)
       ? parsedData.jobListings.slice(0, MAX_JOBS)
@@ -219,7 +219,7 @@ Do not include markdown code block backticks (\`\`\`json) in your response, retu
 `;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-3.6-flash',
+      model: 'gemini-2.5-flash',
       contents: prompt,
       config: {
         responseMimeType: 'application/json',
