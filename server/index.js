@@ -134,7 +134,7 @@ Do not include markdown code block backticks (\`\`\`json) in your response, retu
     console.log(`🤖 Generating AI Skill Gap analysis via Gemini...`);
 
     const response = await ai.models.generateContent({
-      model: 'gemini-3.6-flash',
+      model: 'gemini-2.5-flash',
       contents: prompt,
       config: {
         responseMimeType: 'application/json',
