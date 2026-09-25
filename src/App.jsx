@@ -35,7 +35,8 @@ export default function App() {
         throw new Error(result.error || 'Failed to fetch labor market research');
       }
 
-      setResearchData(result);
+      // Extract inner data object from Express cache/live response
+      setResearchData(result.data || result);
     } catch (err) {
       setError(err.message);
       setResearchData(null);
