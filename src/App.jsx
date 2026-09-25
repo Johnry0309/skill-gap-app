@@ -35,8 +35,14 @@ export default function App() {
         throw new Error(result.error || 'Failed to fetch labor market research');
       }
 
-      // Extract inner data object from Express cache/live response
-      setResearchData(result.data || result);
+      // Ensure state maintains the shape expected by Dashboard ({ data: {...}, source: "..." })
+      if (result.data && result.source) {
+        setResearchData(result);
+      } else if (result.data) {
+        setResearchData({ data: result.data, source: result.source || 'live' });
+      } else {
+        setResearchData({ data: result, source: 'live' });
+      }
     } catch (err) {
       setError(err.message);
       setResearchData(null);
@@ -106,7 +112,7 @@ export default function App() {
           </div>
         )}
 
-        {!loading && researchData && (
+        {!loading && researchData && researchData.data && (
           <Dashboard
             researchData={researchData}
             onTakeQuiz={handleGenerateQuiz}

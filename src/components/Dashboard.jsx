@@ -15,10 +15,13 @@ export default function Dashboard({ researchData, onTakeQuiz }) {
   const [quizLoading, setQuizLoading] = useState(false);
   const [activeQuiz, setActiveQuiz] = useState(null);
 
-  if (!researchData) return null;
+  // 1. Guard against null, undefined, or empty object props
+  if (!researchData || !researchData.data) return null;
 
   const { data, source } = researchData;
-  const lastCheckedDate = data.lastChecked
+
+  // 2. Safe access with optional chaining
+  const lastCheckedDate = data?.lastChecked
     ? new Date(data.lastChecked).toLocaleDateString(undefined, {
         year: 'numeric',
         month: 'short',
@@ -49,15 +52,17 @@ export default function Dashboard({ researchData, onTakeQuiz }) {
           <span style={styles.badge(source)}>
             {source === 'cache' ? `📦 Cached (${lastCheckedDate})` : '⚡ Live Analysis'}
           </span>
-          <h2 style={styles.title}>Labor Market Overview: <span style={{ color: '#99ff46de' }}>{data.city?.toUpperCase()}</span></h2>
+          <h2 style={styles.title}>
+            Labor Market Overview: <span style={{ color: '#99ff46de' }}>{data?.city?.toUpperCase() || 'UNKNOWN'}</span>
+          </h2>
         </div>
         <div style={styles.statsRow}>
           <div style={styles.statBox}>
-            <span style={styles.statValue}>{data.jobListings?.length || 0}</span>
+            <span style={styles.statValue}>{data?.jobListings?.length || 0}</span>
             <span style={styles.statLabel}>Active Roles</span>
           </div>
           <div style={styles.statBox}>
-            <span style={styles.statValue}>{data.comparisonData?.length || 0}</span>
+            <span style={styles.statValue}>{data?.comparisonData?.length || 0}</span>
             <span style={styles.statLabel}>Tracked Skills</span>
           </div>
         </div>
@@ -69,11 +74,11 @@ export default function Dashboard({ researchData, onTakeQuiz }) {
           <span style={styles.icon}>💡</span>
           <h3 style={styles.sectionTitle}>Executive Summary</h3>
         </div>
-        <p style={styles.summaryText}>{data.summary}</p>
+        <p style={styles.summaryText}>{data?.summary || 'No summary available.'}</p>
       </div>
 
       {/* Analytics Chart */}
-      {data.comparisonData && data.comparisonData.length > 0 && (
+      {data?.comparisonData && data.comparisonData.length > 0 && (
         <div style={styles.card}>
           <div style={styles.cardHeader}>
             <span style={styles.icon}>📊</span>
@@ -106,7 +111,7 @@ export default function Dashboard({ researchData, onTakeQuiz }) {
       )}
 
       {/* Strategic Policy Interpretation */}
-      {data.interpretation && (
+      {data?.interpretation && (
         <div style={styles.card}>
           <div style={styles.cardHeader}>
             <span style={styles.icon}>🏛️</span>
@@ -124,7 +129,7 @@ export default function Dashboard({ researchData, onTakeQuiz }) {
         </div>
         
         <div style={styles.jobGrid}>
-          {data.jobListings && data.jobListings.length > 0 ? (
+          {data?.jobListings && data.jobListings.length > 0 ? (
             data.jobListings.map((job, index) => (
               <div key={index} style={styles.jobCard}>
                 <div>
@@ -165,7 +170,6 @@ export default function Dashboard({ researchData, onTakeQuiz }) {
 
             {quizLoading ? (
               <div style={styles.loadingContainer}>
-                <div style={styles.spinner}></div>
                 <p style={{ color: '#64748b', marginTop: '12px', fontSize: '14px' }}>
                   Generating tailored technical assessment via AI...
                 </p>
@@ -188,7 +192,7 @@ function QuizViewer({ quizData, job, onClose }) {
   const [submitted, setSubmitted] = useState(false);
   const [score, setScore] = useState(0);
 
-  const questions = quizData.questions || quizData.quiz || [];
+  const questions = quizData?.questions || quizData?.quiz || [];
 
   const handleSubmit = () => {
     let correctCount = 0;
@@ -213,7 +217,7 @@ function QuizViewer({ quizData, job, onClose }) {
                 <span style={styles.questionNumber}>{qIdx + 1}</span> {q.question}
               </p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {q.options.map((opt, oIdx) => (
+                {q.options?.map((opt, oIdx) => (
                   <label
                     key={oIdx}
                     style={{
@@ -305,7 +309,7 @@ const styles = {
     padding: '24px',
     borderRadius: '12px',
     display: 'flex',
-    justifyContent: 'space-between',
+    justify: 'space-between',
     alignItems: 'center',
     flexWrap: 'wrap',
     gap: '16px',
@@ -404,7 +408,7 @@ const styles = {
     borderRadius: '10px',
     padding: '20px',
     display: 'flex',
-    justifyContent: 'space-between',
+    justify: 'space-between',
     alignItems: 'center',
     transition: 'transform 0.2s, box-shadow 0.2s',
     boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
@@ -458,7 +462,7 @@ const styles = {
     backdropFilter: 'blur(4px)',
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'center',
+    justify: 'center',
     zIndex: 1000
   },
   modalContent: {
@@ -473,7 +477,7 @@ const styles = {
   },
   modalHeader: {
     display: 'flex',
-    justifyContent: 'space-between',
+    justify: 'space-between',
     alignItems: 'center',
     borderBottom: '1px solid #f1f5f9',
     paddingBottom: '14px'
@@ -506,7 +510,7 @@ const styles = {
     height: '22px',
     display: 'inline-flex',
     alignItems: 'center',
-    justifyContent: 'center',
+    justify: 'center',
     flexShrink: 0
   },
   optionLabel: {
@@ -551,7 +555,7 @@ const styles = {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    justifyContent: 'center',
+    justify: 'center',
     margin: '0 auto 16px auto'
   }),
   passAlert: {
