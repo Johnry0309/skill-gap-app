@@ -3,7 +3,10 @@ import CitySelector from './components/CitySelector';
 import Dashboard from './components/Dashboard';
 import './App.css';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://skill-gap-app-fhys.onrender.com';
+// Sanitize URL to ensure no trailing slash before appending /api
+const rawApiUrl = import.meta.env.VITE_API_URL || 'https://skill-gap-app-fhys.onrender.com';
+const CLEAN_API_URL = rawApiUrl.replace(/\/+$/, '');
+const API_BASE_URL = `${CLEAN_API_URL}/api`;
 
 export default function App() {
   const [selectedCity, setSelectedCity] = useState('');
@@ -19,6 +22,13 @@ export default function App() {
 
     try {
       const response = await fetch(`${API_BASE_URL}/research?city=${encodeURIComponent(selectedCity)}`);
+      
+      // Safely check if response is JSON to prevent "Unexpected token 'T'" HTML errors
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error(`Server returned HTML (${response.status}). Check backend route or environment URL.`);
+      }
+
       const result = await response.json();
 
       if (!response.ok) {
@@ -35,18 +45,27 @@ export default function App() {
   };
 
   const handleGenerateQuiz = async (jobTitle, requiredSkills) => {
-    const response = await fetch(`${API_BASE_URL}/assessment`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ jobTitle, requiredSkills })
-    });
+    try {
+      const response = await fetch(`${API_BASE_URL}/assessment`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jobTitle, requiredSkills })
+      });
 
-    const result = await response.json();
-    if (!response.ok) {
-      throw new Error(result.error || 'Failed to generate quiz');
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error(`Server returned non-JSON response (${response.status}).`);
+      }
+
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to generate quiz');
+      }
+
+      return result;
+    } catch (err) {
+      throw new Error(err.message || 'Error communicating with assessment server');
     }
-
-    return result;
   };
 
   return (
