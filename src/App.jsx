@@ -23,26 +23,26 @@ export default function App() {
     try {
       const response = await fetch(`${API_BASE_URL}/research?city=${encodeURIComponent(selectedCity)}`);
       
-      // Safely check if response is JSON to prevent "Unexpected token 'T'" HTML errors
       const contentType = response.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {
-        throw new Error(`Server returned HTML (${response.status}). Check backend route or environment URL.`);
+        throw new Error(`Server endpoint unavailable or sleeping (${response.status}). Please try again in a moment.`);
       }
 
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.error || 'Failed to fetch labor market research');
+        throw new Error(result.error || result.details || `Failed to generate research for ${selectedCity}.`);
       }
 
-      // Ensure state maintains the shape expected by Dashboard ({ data: {...}, source: "..." })
-      if (result.data && result.source) {
-        setResearchData(result);
-      } else if (result.data) {
-        setResearchData({ data: result.data, source: result.source || 'live' });
-      } else {
-        setResearchData({ data: result, source: 'live' });
+      // Safe state extraction supporting both direct objects and wrapped responses
+      const payload = result.data || result;
+      const source = result.source || 'live';
+
+      if (!payload || Object.keys(payload).length === 0) {
+        throw new Error('No research data available for this municipality.');
       }
+
+      setResearchData({ data: payload.data || payload, source });
     } catch (err) {
       setError(err.message);
       setResearchData(null);
