@@ -227,7 +227,7 @@ Do not include markdown code block backticks (\`\`\`json) in your response, retu
         jobListings: limitedJobListings,
         interpretation: parsedData.interpretation,
       },
-      { upsert: true, new: true, runValidators: true }
+      { upsert: true, returnDocument: 'after', runValidators: true }
     );
 
     console.log(`✅ Research successfully processed and saved to database for "${normalizedCity}"`);
