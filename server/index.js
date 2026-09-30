@@ -8,17 +8,38 @@ import { GoogleGenAI } from '@google/genai';
 dotenv.config();
 
 const app = express();
-app.use(cors());
+
+// 1. Configure CORS to prevent browser blocked requests
+const allowedOrigins = [
+  'https://skill-gap-app-five.vercel.app',
+  'http://localhost:5173',
+  'http://localhost:3000'
+];
+
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(null, true); // Allows fallback access during cross-site requests
+    }
+  },
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+}));
+
+app.options('*', cors());
 app.use(express.json());
 
 const PORT = process.env.PORT || 5000;
 
-// 1. Connect to MongoDB Atlas
+// 2. Connect to MongoDB Atlas
 mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log('🍃 Connected to MongoDB Database'))
   .catch((err) => console.error('MongoDB Connection Error:', err));
 
-// 2. Define Mongoose Schema & Model
+// 3. Define Mongoose Schema & Model
 const researchSchema = new mongoose.Schema({
   city: { type: String, required: true, lowercase: true, trim: true, unique: true },
   lastChecked: { type: Date, default: Date.now },
@@ -74,8 +95,8 @@ async function searchWeb(query) {
   }
 }
 
-// 3. Research Route with 30-Day Pseudo-Caching & Forced Refresh
-app.get('/api/research', async (req, res) => {
+// 4. Research Route with 30-Day Pseudo-Caching & Forced Refresh
+app.get('/api/research', async (req, res, next) => {
   const { city, refresh } = req.query;
 
   if (!city) {
@@ -194,18 +215,12 @@ Do not include markdown code block backticks (\`\`\`json) in your response, retu
     });
 
   } catch (error) {
-    console.error(`❌ Research error for ${normalizedCity}:`, error.message);
-    
-    // Return error status so invalid mock data is not saved to Atlas
-    return res.status(500).json({
-      error: 'An error occurred while generating labor market research.',
-      details: error.message,
-    });
+    next(error); // Pass error to global error handler
   }
 });
 
-// 4. Endpoint to Reset/Clear Cache
-app.delete('/api/research', async (req, res) => {
+// 5. Endpoint to Reset/Clear Cache
+app.delete('/api/research', async (req, res, next) => {
   const { city, all } = req.query;
 
   try {
@@ -223,12 +238,12 @@ app.delete('/api/research', async (req, res) => {
 
     return res.json({ message: `Cache for "${normalizedCity}" cleared successfully.`, deletedCount: result.deletedCount });
   } catch (error) {
-    return res.status(500).json({ error: 'Failed to clear cache.', details: error.message });
+    next(error);
   }
 });
 
-// 5. Assessment Route
-app.post('/api/assessment', async (req, res) => {
+// 6. Assessment Route
+app.post('/api/assessment', async (req, res, next) => {
   const { jobTitle, requiredSkills } = req.body;
 
   if (!jobTitle) {
@@ -277,12 +292,21 @@ Do not include markdown code block backticks (\`\`\`json) in your response, retu
     return res.json(quizData);
 
   } catch (error) {
-    console.error('Error generating assessment:', error);
-    return res.status(500).json({
-      error: 'Failed to generate skill assessment',
-      details: error.message,
-    });
+    next(error);
   }
+});
+
+// 7. Global Error Handler (Prevents server crashes from dropping CORS headers)
+app.use((err, req, res, next) => {
+  console.error('🔥 Server Error Catch:', err.message);
+
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+
+  res.status(500).json({
+    error: 'Internal Server Error',
+    details: err.message || 'An unexpected backend error occurred.'
+  });
 });
 
 app.listen(PORT, () => {
