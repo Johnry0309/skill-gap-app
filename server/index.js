@@ -65,8 +65,7 @@ const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 async function generateContentWithRetry(aiClient, baseParams, retries = 3, initialDelay = 2000) {
   const modelsToTry = [
     'gemini-3.8-flash',
-    'gemini-1.5-flash',
-    'gemini-1.5-pro'
+    'gemini-3.6-flash'
   ];
 
   for (let attempt = 0; attempt < retries; attempt++) {
