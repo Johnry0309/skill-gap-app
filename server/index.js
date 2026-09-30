@@ -61,21 +61,47 @@ const Research = mongoose.model('Research', researchSchema);
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
-// Exponential Backoff Retry Helper
-async function generateContentWithRetry(aiClient, params, retries = 3, delay = 2000) {
-  for (let i = 0; i < retries; i++) {
-    try {
-      return await aiClient.models.generateContent(params);
-    } catch (error) {
-      if ((error.status === 503 || error.code === 503 || error.status === 429) && i < retries - 1) {
-        console.warn(`⚠️ Gemini 503/Quota Spike. Retrying in ${delay / 1000}s... (Attempt ${i + 1}/${retries})`);
-        await new Promise((res) => setTimeout(res, delay));
-        delay *= 2;
-      } else {
+// Multi-Model Fallback and Backoff Retry Helper
+async function generateContentWithRetry(aiClient, baseParams, retries = 3, initialDelay = 2000) {
+  const modelsToTry = [
+    'gemini-3.8-flash',
+    'gemini-1.5-flash',
+    'gemini-1.5-pro'
+  ];
+
+  for (let attempt = 0; attempt < retries; attempt++) {
+    for (const modelName of modelsToTry) {
+      try {
+        console.log(`🤖 Attempting generation with model: ${modelName}...`);
+        return await aiClient.models.generateContent({
+          ...baseParams,
+          model: modelName,
+        });
+      } catch (error) {
+        const status = error.status || error.code || (error.error && error.error.code);
+
+        // If 503 (High Demand) or 429 (Rate Limit), move to the next fallback model
+        if (status === 503 || status === 429) {
+          console.warn(`⚠️ ${modelName} returned status${status} (High Demand/Rate Limit). Trying next fallback...`);
+          continue;
+        }
+
+        // If 404 (Not Found), skip this model in future retries
+        if (status === 404) {
+          console.warn(`⚠️ ${modelName} is unavailable (404). Skipping...`);
+          continue;
+        }
+
         throw error;
       }
     }
+
+    const delay = initialDelay * Math.pow(2, attempt);
+    console.warn(`⚠️ All model fallbacks busy. Retrying full loop in ${delay / 1000}s... (Attempt ${attempt + 1}/${retries})`);
+    await new Promise((res) => setTimeout(res, delay));
   }
+
+  throw new Error('All Gemini models are currently experiencing high traffic. Please try again in a few moments.');
 }
 
 // Helper: Tavily Web Search
@@ -175,7 +201,6 @@ Do not include markdown code block backticks (\`\`\`json) in your response, retu
     console.log(`🤖 Generating AI Skill Gap analysis via Gemini...`);
 
     const response = await generateContentWithRetry(ai, {
-      model: 'gemini-3.8-flash',
       contents: prompt,
       config: {
         responseMimeType: 'application/json',
@@ -276,7 +301,6 @@ Do not include markdown code block backticks (\`\`\`json) in your response, retu
 `;
 
     const response = await generateContentWithRetry(ai, {
-      model: 'gemini-3.8-flash',
       contents: prompt,
       config: {
         responseMimeType: 'application/json',
