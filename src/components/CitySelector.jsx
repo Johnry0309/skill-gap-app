@@ -14,7 +14,7 @@ const RIZAL_MUNICIPALITIES = [
   'San Mateo',
   'Tanay',
   'Taytay',
-  'Teresa'
+  'Teresa Rizal'
 ];
 
 export default function CitySelector({ selectedCity, onSelectCity, onSearch, loading }) {

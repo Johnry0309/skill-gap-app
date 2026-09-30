@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import CitySelector from './components/CitySelector';
 import Dashboard from './components/Dashboard';
+import OnboardingModal from './components/OnboardingModal';
 import './App.css';
 
 // Sanitize URL to ensure no trailing slash before appending /api
@@ -77,6 +78,9 @@ export default function App() {
 
   return (
     <div className="app-viewport">
+      {/* Onboarding Intro Modal */}
+      <OnboardingModal />
+
       {/* Top Brand Header */}
       <header className="app-header">
         <div className="app-header-content">
