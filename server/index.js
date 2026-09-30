@@ -9,7 +9,7 @@ dotenv.config();
 
 const app = express();
 
-// 1. Configure CORS to prevent browser blocked requests
+// 1. Configure CORS Middleware
 const allowedOrigins = [
   'https://skill-gap-app-five.vercel.app',
   'http://localhost:5173',
@@ -21,7 +21,7 @@ app.use(cors({
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      callback(null, true); // Allows fallback access during cross-site requests
+      callback(null, true);
     }
   },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -29,7 +29,6 @@ app.use(cors({
   credentials: true
 }));
 
-app.options('/*', cors());
 app.use(express.json());
 
 const PORT = process.env.PORT || 5000;
@@ -176,7 +175,7 @@ Do not include markdown code block backticks (\`\`\`json) in your response, retu
     console.log(`🤖 Generating AI Skill Gap analysis via Gemini...`);
 
     const response = await generateContentWithRetry(ai, {
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3.8-flash',
       contents: prompt,
       config: {
         responseMimeType: 'application/json',
@@ -215,7 +214,7 @@ Do not include markdown code block backticks (\`\`\`json) in your response, retu
     });
 
   } catch (error) {
-    next(error); // Pass error to global error handler
+    next(error);
   }
 });
 
@@ -277,7 +276,7 @@ Do not include markdown code block backticks (\`\`\`json) in your response, retu
 `;
 
     const response = await generateContentWithRetry(ai, {
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3.8-flash',
       contents: prompt,
       config: {
         responseMimeType: 'application/json',
@@ -296,7 +295,7 @@ Do not include markdown code block backticks (\`\`\`json) in your response, retu
   }
 });
 
-// 7. Global Error Handler (Prevents server crashes from dropping CORS headers)
+// 7. Global Error Handler
 app.use((err, req, res, next) => {
   console.error('🔥 Server Error Catch:', err.message);
 
