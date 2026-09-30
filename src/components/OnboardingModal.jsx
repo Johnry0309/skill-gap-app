@@ -1,19 +1,17 @@
 import React, { useState, useEffect } from 'react';
 
 export default function OnboardingModal() {
-  const [isOpen, setIsOpen] = useState(false);
+  // 1. Initialize state directly to true so it pops up every visit
+  const [isOpen, setIsOpen] = useState(true);
   const [currentSlide, setCurrentSlide] = useState(0);
 
+  // 2. Simply reset slide or open modal on mount (no localStorage check)
   useEffect(() => {
-    // Check if user has already dismissed onboarding
-    const hasSeen = localStorage.getItem('hasSeenOnboarding');
-    if (!hasSeen) {
-      setIsOpen(true);
-    }
+    setIsOpen(true);
   }, []);
 
   const handleClose = () => {
-    localStorage.setItem('hasSeenOnboarding', 'true');
+    // 3. Close the modal for the current session without saving a flag to localStorage
     setIsOpen(false);
   };
 
@@ -167,7 +165,7 @@ const styles = {
     backdropFilter: 'blur(5px)',
     display: 'flex',
     alignItems: 'center',
-    justify: 'center',
+    justifyContent: 'center',
     zIndex: 2000,
     padding: '16px'
   },
@@ -196,14 +194,14 @@ const styles = {
     fontSize: '14px',
     display: 'flex',
     alignItems: 'center',
-    justify: 'center'
+    justifyContent: 'center'
   },
   imageContainer: {
     height: '200px',
     backgroundColor: '#0f172a',
     display: 'flex',
     alignItems: 'center',
-    justify: 'center'
+    justifyContent: 'center'
   },
   content: {
     padding: '24px 24px 12px 24px',
@@ -237,7 +235,7 @@ const styles = {
     padding: '16px 24px 24px 24px',
     display: 'flex',
     alignItems: 'center',
-    justify: 'space-between'
+    justifyContent: 'space-between'
   },
   dotsContainer: {
     display: 'flex',
