@@ -132,7 +132,8 @@ export default function Dashboard({ researchData, onTakeQuiz }) {
           {data?.jobListings && data.jobListings.length > 0 ? (
             data.jobListings.map((job, index) => (
               <div key={index} style={styles.jobCard}>
-                <div>
+                {/* Left Column: Job Info & Skills */}
+                <div style={styles.jobInfoCol}>
                   <h4 style={styles.jobTitle}>{job.title}</h4>
                   <p style={styles.companyName}>{job.company}</p>
                   <div style={styles.skillTagContainer}>
@@ -143,12 +144,16 @@ export default function Dashboard({ researchData, onTakeQuiz }) {
                     ))}
                   </div>
                 </div>
-                <button
-                  onClick={() => handleStartQuiz(job)}
-                  style={styles.verifyBtn}
-                >
-                  Verify Skill & Apply →
-                </button>
+
+                {/* Right Column: Uniformly Aligned Action Button */}
+                <div style={styles.actionCol}>
+                  <button
+                    onClick={() => handleStartQuiz(job)}
+                    style={styles.verifyBtn}
+                  >
+                    Verify Skill & Apply →
+                  </button>
+                </div>
               </div>
             ))
           ) : (
@@ -309,7 +314,7 @@ const styles = {
     padding: '24px',
     borderRadius: '12px',
     display: 'flex',
-    justify: 'space-between',
+    justifyContent: 'space-between',
     alignItems: 'center',
     flexWrap: 'wrap',
     gap: '16px',
@@ -398,7 +403,8 @@ const styles = {
     lineHeight: '1.7'
   },
   jobGrid: {
-    display: 'grid',
+    display: 'flex',
+    flexDirection: 'column',
     gap: '16px',
     marginTop: '15px'
   },
@@ -408,10 +414,19 @@ const styles = {
     borderRadius: '10px',
     padding: '20px',
     display: 'flex',
-    justify: 'space-between',
+    justifyContent: 'space-between',
     alignItems: 'center',
     transition: 'transform 0.2s, box-shadow 0.2s',
     boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
+  },
+  jobInfoCol: {
+    flex: 1,
+    marginRight: '24px'
+  },
+  actionCol: {
+    flexShrink: 0,
+    display: 'flex',
+    alignItems: 'center'
   },
   jobTitle: {
     margin: '0 0 4px 0',
@@ -462,7 +477,7 @@ const styles = {
     backdropFilter: 'blur(4px)',
     display: 'flex',
     alignItems: 'center',
-    justify: 'center',
+    justifyContent: 'center',
     zIndex: 1000
   },
   modalContent: {
@@ -477,7 +492,7 @@ const styles = {
   },
   modalHeader: {
     display: 'flex',
-    justify: 'space-between',
+    justifyContent: 'space-between',
     alignItems: 'center',
     borderBottom: '1px solid #f1f5f9',
     paddingBottom: '14px'
@@ -510,7 +525,7 @@ const styles = {
     height: '22px',
     display: 'inline-flex',
     alignItems: 'center',
-    justify: 'center',
+    justifyContent: 'center',
     flexShrink: 0
   },
   optionLabel: {
@@ -555,7 +570,7 @@ const styles = {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    justify: 'center',
+    justifyContent: 'center',
     margin: '0 auto 16px auto'
   }),
   passAlert: {
