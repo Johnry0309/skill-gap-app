@@ -9,7 +9,6 @@ dotenv.config();
 
 const app = express();
 
-// 1. Configure CORS Middleware
 const allowedOrigins = [
   'https://skill-gap-app-five.vercel.app',
   'http://localhost:5173',
@@ -33,12 +32,10 @@ app.use(express.json());
 
 const PORT = process.env.PORT || 5000;
 
-// 2. Connect to MongoDB Atlas
 mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log('🍃 Connected to MongoDB Database'))
   .catch((err) => console.error('MongoDB Connection Error:', err));
 
-// 3. Define Mongoose Schema & Model
 const researchSchema = new mongoose.Schema({
   city: { type: String, required: true, lowercase: true, trim: true, unique: true },
   lastChecked: { type: Date, default: Date.now },
@@ -46,6 +43,15 @@ const researchSchema = new mongoose.Schema({
   comparisonData: Array,
   institutions: Array,
   courseDetails: Array,
+  schools: [
+    {
+      name: String,
+      type: String,
+      graduatesCount: Number,
+      courses: [String],
+      website: String,
+    }
+  ],
   jobListings: [
     {
       title: String,
@@ -61,7 +67,6 @@ const Research = mongoose.model('Research', researchSchema);
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
-// Multi-Model Fallback and Backoff Retry Helper
 async function generateContentWithRetry(aiClient, baseParams, retries = 3, initialDelay = 2000) {
   const modelsToTry = [
     'gemini-3.8-flash',
@@ -79,13 +84,11 @@ async function generateContentWithRetry(aiClient, baseParams, retries = 3, initi
       } catch (error) {
         const status = error.status || error.code || (error.error && error.error.code);
 
-        // If 503 (High Demand) or 429 (Rate Limit), move to the next fallback model
         if (status === 503 || status === 429) {
           console.warn(`⚠️ ${modelName} returned status${status} (High Demand/Rate Limit). Trying next fallback...`);
           continue;
         }
 
-        // If 404 (Not Found), skip this model in future retries
         if (status === 404) {
           console.warn(`⚠️ ${modelName} is unavailable (404). Skipping...`);
           continue;
@@ -103,7 +106,6 @@ async function generateContentWithRetry(aiClient, baseParams, retries = 3, initi
   throw new Error('All Gemini models are currently experiencing high traffic. Please try again in a few moments.');
 }
 
-// Helper: Tavily Web Search
 async function searchWeb(query) {
   try {
     const response = await axios.post('https://api.tavily.com/search', {
@@ -119,7 +121,6 @@ async function searchWeb(query) {
   }
 }
 
-// 4. Research Route with 30-Day Pseudo-Caching & Forced Refresh
 app.get('/api/research', async (req, res, next) => {
   const { city, refresh } = req.query;
 
@@ -132,7 +133,6 @@ app.get('/api/research', async (req, res, next) => {
   try {
     const existingRecord = await Research.findOne({ city: normalizedCity });
 
-    // Skip cache if refresh=true is passed in query
     if (existingRecord && refresh !== 'true') {
       const thirtyDaysInMs = 30 * 24 * 60 * 60 * 1000;
       const age = Date.now() - new Date(existingRecord.lastChecked).getTime();
@@ -182,6 +182,15 @@ Strictly return a valid JSON object matching this exact structure:
   "courseDetails": [
     { "title": "Program or Skill Area", "mismatchNote": "Note on curriculum alignment or gap with industry standards" }
   ],
+  "schools": [
+    {
+      "name": "Exact Name of Local Higher Education Institution",
+      "type": "State University / Private Institution / Vocational Tech",
+      "graduatesCount": 500,
+      "courses": ["BS Information Technology", "BS Business Administration"],
+      "website": "https://official-institution-url.edu.ph"
+    }
+  ],
   "jobListings": [
     {
       "title": "Job Title",
@@ -193,7 +202,7 @@ Strictly return a valid JSON object matching this exact structure:
   "interpretation": "Detailed strategic policy recommendations for municipal leaders and academic institutions."
 }
 
-Note: Provide exactly up to 10 distinct job openings inside the "jobListings" array.
+Note: Provide up to 5 key local higher education institutions inside "schools" and up to 10 job openings inside "jobListings".
 Do not include markdown code block backticks (\`\`\`json) in your response, return raw JSON string only.
 `;
 
@@ -210,6 +219,18 @@ Do not include markdown code block backticks (\`\`\`json) in your response, retu
     rawText = rawText.replace(/^```json\s*/i, '').replace(/^```\s*/, '').replace(/\s*```$/, '');
     const parsedData = JSON.parse(rawText);
 
+    // Defensive parsing for schools
+    let processedSchools = [];
+    if (typeof parsedData.schools === 'string') {
+      try {
+        processedSchools = JSON.parse(parsedData.schools);
+      } catch (e) {
+        processedSchools = [];
+      }
+    } else if (Array.isArray(parsedData.schools)) {
+      processedSchools = parsedData.schools;
+    }
+
     const MAX_JOBS = 10;
     const limitedJobListings = Array.isArray(parsedData.jobListings)
       ? parsedData.jobListings.slice(0, MAX_JOBS)
@@ -224,6 +245,7 @@ Do not include markdown code block backticks (\`\`\`json) in your response, retu
         comparisonData: parsedData.comparisonData,
         institutions: parsedData.institutions,
         courseDetails: parsedData.courseDetails,
+        schools: processedSchools,
         jobListings: limitedJobListings,
         interpretation: parsedData.interpretation,
       },
@@ -242,7 +264,6 @@ Do not include markdown code block backticks (\`\`\`json) in your response, retu
   }
 });
 
-// 5. Endpoint to Reset/Clear Cache
 app.delete('/api/research', async (req, res, next) => {
   const { city, all } = req.query;
 
@@ -265,7 +286,6 @@ app.delete('/api/research', async (req, res, next) => {
   }
 });
 
-// 6. Assessment Route
 app.post('/api/assessment', async (req, res, next) => {
   const { jobTitle, requiredSkills } = req.body;
 
@@ -318,7 +338,6 @@ Do not include markdown code block backticks (\`\`\`json) in your response, retu
   }
 });
 
-// 7. Global Error Handler
 app.use((err, req, res, next) => {
   console.error('🔥 Server Error Catch:', err.message);
 

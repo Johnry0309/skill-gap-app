@@ -15,12 +15,10 @@ export default function Dashboard({ researchData, onTakeQuiz }) {
   const [quizLoading, setQuizLoading] = useState(false);
   const [activeQuiz, setActiveQuiz] = useState(null);
 
-  // 1. Guard against null, undefined, or empty object props
   if (!researchData || !researchData.data) return null;
 
   const { data, source } = researchData;
 
-  // 2. Safe access with optional chaining
   const lastCheckedDate = data?.lastChecked
     ? new Date(data.lastChecked).toLocaleDateString(undefined, {
         year: 'numeric',
@@ -121,6 +119,64 @@ export default function Dashboard({ researchData, onTakeQuiz }) {
         </div>
       )}
 
+      {/* Academic Institutions & Graduate Output */}
+      <div style={styles.card}>
+        <div style={styles.cardHeader}>
+          <span style={styles.icon}>🎓</span>
+          <h3 style={styles.sectionTitle}>Academic Institutions & Graduate Output</h3>
+        </div>
+        <p style={styles.subText}>Regional universities, colleges, and technical schools contributing to the talent supply.</p>
+
+        {data?.schools && data.schools.length > 0 ? (
+          <div style={styles.institutionGrid}>
+            {data.schools.map((school, sIdx) => (
+              <div key={sIdx} style={styles.institutionCard}>
+                <div style={styles.institutionHeader}>
+                  <div>
+                    <h4 style={styles.schoolName}>{school.name}</h4>
+                    <span style={styles.schoolTypeTag}>{school.type || 'Academic Institution'}</span>
+                  </div>
+                  {school.graduatesCount && (
+                    <div style={styles.gradBadge}>
+                      <span style={styles.gradNumber}>~{school.graduatesCount.toLocaleString()}</span>
+                      <span style={styles.gradLabel}>Annual Grads</span>
+                    </div>
+                  )}
+                </div>
+
+                {school.courses && school.courses.length > 0 && (
+                  <div style={{ marginTop: '12px' }}>
+                    <p style={styles.courseHeaderLabel}>Key Offered Programs:</p>
+                    <div style={styles.skillTagContainer}>
+                      {school.courses.map((course, cIdx) => (
+                        <span key={cIdx} style={styles.courseTag}>
+                          {course}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {school.website && (
+                  <div style={{ marginTop: '14px', textAlign: 'right' }}>
+                    <a
+                      href={school.website.startsWith('http') ? school.website : `https://${school.website}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      style={styles.portalLink}
+                    >
+                      Visit Institution Portal ↗
+                    </a>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p style={styles.emptyText}>No academic institution telemetry recorded for this municipality yet.</p>
+        )}
+      </div>
+
       {/* Job Openings Grid */}
       <div style={{ marginTop: '35px' }}>
         <div style={styles.cardHeader}>
@@ -132,7 +188,6 @@ export default function Dashboard({ researchData, onTakeQuiz }) {
           {data?.jobListings && data.jobListings.length > 0 ? (
             data.jobListings.map((job, index) => (
               <div key={index} style={styles.jobCard}>
-                {/* Left Column: Job Info & Skills */}
                 <div style={styles.jobInfoCol}>
                   <h4 style={styles.jobTitle}>{job.title}</h4>
                   <p style={styles.companyName}>{job.company}</p>
@@ -145,7 +200,6 @@ export default function Dashboard({ researchData, onTakeQuiz }) {
                   </div>
                 </div>
 
-                {/* Right Column: Uniformly Aligned Action Button */}
                 <div style={styles.actionCol}>
                   <button
                     onClick={() => handleStartQuiz(job)}
@@ -191,7 +245,6 @@ export default function Dashboard({ researchData, onTakeQuiz }) {
   );
 }
 
-// Interactive Quiz Component
 function QuizViewer({ quizData, job, onClose }) {
   const [answers, setAnswers] = useState({});
   const [submitted, setSubmitted] = useState(false);
@@ -301,7 +354,6 @@ function QuizViewer({ quizData, job, onClose }) {
   );
 }
 
-// Inline Style Object
 const styles = {
   container: {
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
@@ -401,6 +453,81 @@ const styles = {
     color: '#334155',
     fontSize: '15px',
     lineHeight: '1.7'
+  },
+  institutionGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+    gap: '16px',
+    marginTop: '16px'
+  },
+  institutionCard: {
+    backgroundColor: '#f8fafc',
+    border: '1px solid #e2e8f0',
+    borderRadius: '10px',
+    padding: '16px',
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'space-between'
+  },
+  institutionHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    gap: '12px'
+  },
+  schoolName: {
+    margin: '0 0 4px 0',
+    fontSize: '15px',
+    fontWeight: '700',
+    color: '#0f172a'
+  },
+  schoolTypeTag: {
+    fontSize: '11px',
+    backgroundColor: '#e0f2fe',
+    color: '#0369a1',
+    fontWeight: '600',
+    padding: '2px 8px',
+    borderRadius: '4px'
+  },
+  gradBadge: {
+    backgroundColor: '#f1f5f9',
+    border: '1px solid #cbd5e1',
+    borderRadius: '6px',
+    padding: '4px 8px',
+    textAlign: 'center',
+    flexShrink: 0
+  },
+  gradNumber: {
+    display: 'block',
+    fontSize: '13px',
+    fontWeight: '700',
+    color: '#0f172a'
+  },
+  gradLabel: {
+    fontSize: '9px',
+    color: '#64748b',
+    textTransform: 'uppercase'
+  },
+  courseHeaderLabel: {
+    margin: '0 0 6px 0',
+    fontSize: '12px',
+    fontWeight: '600',
+    color: '#475569'
+  },
+  courseTag: {
+    fontSize: '11px',
+    backgroundColor: '#ffffff',
+    border: '1px solid #cbd5e1',
+    color: '#334155',
+    fontWeight: '500',
+    padding: '2px 7px',
+    borderRadius: '4px'
+  },
+  portalLink: {
+    fontSize: '12px',
+    color: '#2563eb',
+    fontWeight: '600',
+    textDecoration: 'none'
   },
   jobGrid: {
     display: 'flex',

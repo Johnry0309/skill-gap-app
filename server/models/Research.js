@@ -6,6 +6,16 @@ const ResearchSchema = new mongoose.Schema({
   summary: String,
   comparisonData: Array,
   institutions: Array,
+  courseDetails: Array,
+  schools: [
+    {
+      name: String,
+      type: String,
+      graduatesCount: Number,
+      courses: [String],
+      website: String,
+    }
+  ],
   jobListings: [
     {
       title: String,
