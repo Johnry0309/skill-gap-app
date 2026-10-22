@@ -232,7 +232,7 @@ Do not include markdown code block backticks (\`\`\`json) in your response, retu
 
       return {
         name: String(school.name || school.institution || 'Unknown Institution'),
-        type: String(school.type || 'Academic Institution'),
+        schoolType: String(school.schoolType || school.type || 'Academic Institution'),
         graduatesCount: Number(school.graduatesCount || school.annualGraduates || 0) || 0,
         courses: Array.isArray(parsedCourses) ? parsedCourses.map(c => String(c)) : [],
         website: String(school.website || '')

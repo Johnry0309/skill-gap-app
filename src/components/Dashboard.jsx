@@ -134,7 +134,7 @@ export default function Dashboard({ researchData, onTakeQuiz }) {
                 <div style={styles.institutionHeader}>
                   <div>
                     <h4 style={styles.schoolName}>{school.name}</h4>
-                    <span style={styles.schoolTypeTag}>{school.type || 'Academic Institution'}</span>
+                    <span style={styles.schoolTypeTag}>{school.schoolType || school.type || 'Academic Institution'}</span>
                   </div>
                   {school.graduatesCount && (
                     <div style={styles.gradBadge}>

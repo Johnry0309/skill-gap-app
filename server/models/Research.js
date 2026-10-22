@@ -10,7 +10,7 @@ const ResearchSchema = new mongoose.Schema({
   schools: [
     {
       name: String,
-      type: String,
+      schoolType: String,
       graduatesCount: Number,
       courses: [String],
       website: String,
