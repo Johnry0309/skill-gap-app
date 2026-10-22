@@ -203,6 +203,8 @@ Strictly return a valid JSON object matching this exact structure:
 }
 
 Note: Provide up to 5 key local higher education institutions inside "schools" and up to 10 job openings inside "jobListings".
+CRITICAL JSON FORMATTING REQUIREMENT:
+Ensure "schools" is formatted strictly as a JSON Array of Objects using standard double quotes for all keys and string values.
 Do not include markdown code block backticks (\`\`\`json) in your response, return raw JSON string only.
 `;
 
@@ -219,35 +221,49 @@ Do not include markdown code block backticks (\`\`\`json) in your response, retu
     rawText = rawText.replace(/^```json\s*/i, '').replace(/^```\s*/, '').replace(/\s*```$/, '');
     const parsedData = JSON.parse(rawText);
 
-    // 1. Defensively convert stringified schools back into a real JavaScript Array
+    // 1. Defensively convert stringified schools back into a real JavaScript Array (handles valid JSON & JS object literal strings)
     let safeSchools = [];
+
     if (typeof parsedData.schools === 'string') {
       try {
         safeSchools = JSON.parse(parsedData.schools);
-      } catch (e) {
-        console.warn('⚠️ Could not parse schools string JSON:', e.message);
-        safeSchools = [];
+      } catch (e1) {
+        try {
+          safeSchools = Function(`"use strict"; return (${parsedData.schools})`)();
+        } catch (e2) {
+          console.warn('⚠️ Could not evaluate schools string:', e2.message);
+          safeSchools = [];
+        }
       }
     } else if (Array.isArray(parsedData.schools)) {
       safeSchools = parsedData.schools;
     }
 
-    // 2. Ensure sub-properties (e.g. courses array, graduatesCount number) are properly typed
+    if (!Array.isArray(safeSchools)) {
+      safeSchools = [];
+    }
+
+    // 2. Normalize and sanitize all school fields into proper types
     safeSchools = safeSchools.map(school => {
       let parsedCourses = school.courses;
       if (typeof parsedCourses === 'string') {
         try {
           parsedCourses = JSON.parse(parsedCourses);
         } catch (e) {
-          parsedCourses = [parsedCourses];
+          try {
+            parsedCourses = Function(`"use strict"; return (${parsedCourses})`)();
+          } catch (e2) {
+            parsedCourses = [parsedCourses];
+          }
         }
       }
+
       return {
-        name: school.name || '',
-        type: school.type || '',
-        graduatesCount: Number(school.graduatesCount) || 0,
-        courses: Array.isArray(parsedCourses) ? parsedCourses : [],
-        website: school.website || ''
+        name: String(school.name || school.institution || 'Unknown Institution'),
+        type: String(school.type || 'Academic Institution'),
+        graduatesCount: Number(school.graduatesCount || school.annualGraduates || 0) || 0,
+        courses: Array.isArray(parsedCourses) ? parsedCourses.map(c => String(c)) : [],
+        website: String(school.website || '')
       };
     });
 
