@@ -27,4 +27,4 @@ const ResearchSchema = new mongoose.Schema({
   interpretation: String,
 });
 
-export default mongoose.model('Research', ResearchSchema);
+export default mongoose.models.Research || mongoose.model('Research', ResearchSchema);

@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import axios from 'axios';
 import mongoose from 'mongoose';
 import { GoogleGenAI } from '@google/genai';
+import Research from './models/Research.js';
 
 dotenv.config();
 
@@ -35,35 +36,6 @@ const PORT = process.env.PORT || 5000;
 mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log('🍃 Connected to MongoDB Database'))
   .catch((err) => console.error('MongoDB Connection Error:', err));
-
-const researchSchema = new mongoose.Schema({
-  city: { type: String, required: true, lowercase: true, trim: true, unique: true },
-  lastChecked: { type: Date, default: Date.now },
-  summary: String,
-  comparisonData: Array,
-  institutions: Array,
-  courseDetails: Array,
-  schools: [
-    {
-      name: String,
-      type: String,
-      graduatesCount: Number,
-      courses: [String],
-      website: String,
-    }
-  ],
-  jobListings: [
-    {
-      title: String,
-      company: String,
-      applyLink: String,
-      requiredSkills: [String],
-    }
-  ],
-  interpretation: String,
-});
-
-const Research = mongoose.model('Research', researchSchema);
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
