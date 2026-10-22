@@ -219,17 +219,37 @@ Do not include markdown code block backticks (\`\`\`json) in your response, retu
     rawText = rawText.replace(/^```json\s*/i, '').replace(/^```\s*/, '').replace(/\s*```$/, '');
     const parsedData = JSON.parse(rawText);
 
-    // Defensive parsing for schools
-    let processedSchools = [];
+    // 1. Defensively convert stringified schools back into a real JavaScript Array
+    let safeSchools = [];
     if (typeof parsedData.schools === 'string') {
       try {
-        processedSchools = JSON.parse(parsedData.schools);
+        safeSchools = JSON.parse(parsedData.schools);
       } catch (e) {
-        processedSchools = [];
+        console.warn('⚠️ Could not parse schools string JSON:', e.message);
+        safeSchools = [];
       }
     } else if (Array.isArray(parsedData.schools)) {
-      processedSchools = parsedData.schools;
+      safeSchools = parsedData.schools;
     }
+
+    // 2. Ensure sub-properties (e.g. courses array, graduatesCount number) are properly typed
+    safeSchools = safeSchools.map(school => {
+      let parsedCourses = school.courses;
+      if (typeof parsedCourses === 'string') {
+        try {
+          parsedCourses = JSON.parse(parsedCourses);
+        } catch (e) {
+          parsedCourses = [parsedCourses];
+        }
+      }
+      return {
+        name: school.name || '',
+        type: school.type || '',
+        graduatesCount: Number(school.graduatesCount) || 0,
+        courses: Array.isArray(parsedCourses) ? parsedCourses : [],
+        website: school.website || ''
+      };
+    });
 
     const MAX_JOBS = 10;
     const limitedJobListings = Array.isArray(parsedData.jobListings)
@@ -245,7 +265,7 @@ Do not include markdown code block backticks (\`\`\`json) in your response, retu
         comparisonData: parsedData.comparisonData,
         institutions: parsedData.institutions,
         courseDetails: parsedData.courseDetails,
-        schools: processedSchools,
+        schools: safeSchools,
         jobListings: limitedJobListings,
         interpretation: parsedData.interpretation,
       },
